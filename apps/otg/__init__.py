@@ -84,8 +84,8 @@ def _write(path: str, value: (str | int), optional: bool=False) -> None:
         file.write(str(value))
 
 
-def _create_frame(function: str, width: int, height: int, format: str, name: str):
-    wdir = f"functions/{function}/streaming/{format}/{name}/{height}p"
+def _create_frame(func_path: str, width: int, height: int, format: str, name: str):
+    wdir = f"{func_path}/streaming/{format}/{name}/{height}p"
     _mkdir(wdir)
 
     # Define paths
@@ -219,12 +219,12 @@ class _GadgetConfig:
         func_path = join(self.__gadget_path, "functions", func)
 
         _mkdir(func_path)
-        _create_frame(func, 640, 360, "uncompressed", "u")
-        _create_frame(func, 1280, 720, "uncompressed", "u")
-        _create_frame(func, 320, 180, "uncompressed", "u")
-        _create_frame(func, 1920, 1080, "mjpeg", "m")
-        _create_frame(func, 640, 480, "mjpeg", "m")
-        _create_frame(func, 640, 360, "mjpeg", "m")
+        _create_frame(func_path, 640, 360, "uncompressed", "u")
+        _create_frame(func_path, 1280, 720, "uncompressed", "u")
+        _create_frame(func_path, 320, 180, "uncompressed", "u")
+        _create_frame(func_path, 1920, 1080, "mjpeg", "m")
+        _create_frame(func_path, 640, 480, "mjpeg", "m")
+        _create_frame(func_path, 640, 360, "mjpeg", "m")
 
         # Create symbolic links
         _mkdir(f"{func_path}/streaming/header/h")
