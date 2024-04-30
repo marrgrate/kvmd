@@ -47,7 +47,7 @@ from .hid.mouse import make_mouse_hid
 # =====
 def _mkdir(path: str) -> None:
     get_logger().info("MKDIR --- %s", path)
-    os.mkdir(path)
+    os.makedirs(path, exist_ok=True)
 
 
 def _chown(path: str, user: str) -> None:
@@ -80,12 +80,13 @@ def _write(path: str, value: (str | int), optional: bool=False) -> None:
         logger.info("WRITE --- [SKIPPED] %s", path)
         return
     logger.info("WRITE --- %s", path)
-    with open(path, "w") as file:
+    with open(path, "a") as file:
         file.write(str(value))
 
 
 def _create_frame(func_path: str, width: int, height: int, format: str, name: str):
     wdir = f"{func_path}/streaming/{format}/{name}/{height}p"
+    # get_logger().info("WDIR --- %s", wdir)
     _mkdir(wdir)
 
     # Define paths
@@ -97,10 +98,8 @@ def _create_frame(func_path: str, width: int, height: int, format: str, name: st
     _write(wWidth_path, width)
     _write(wHeight_path, height)
     _write(dwMaxVideoFrameBufferSize_path, width * height * 2)
-    _write(dwFrameInterval_path, """666666
-100000
-5000000
-""", optional=True)
+
+    # _write(dwFrameInterval_path, "666666")
 
 
 def _write_bytes(path: str, data: bytes) -> None:
@@ -228,17 +227,19 @@ class _GadgetConfig:
 
         # Create symbolic links
         _mkdir(f"{func_path}/streaming/header/h")
-        for fmt in ["uncompressed", "mjpeg"]:
-            _symlink(f"../../../{fmt}/u", f"{func_path}/streaming/header/h/{fmt}")
 
+        _symlink(f"{func_path}/streaming/uncompressed/u", f"{func_path}/streaming/header/h/u")
+        _symlink(f"{func_path}/streaming/mjpeg/m", f"{func_path}/streaming/header/h/m")
+
+        # _mkdir(f"{func_path}/streaming/class")
         for cls in ["fs", "hs", "ss"]:
-            _mkdir(f"{func_path}/class/{cls}/header/h")
-            _symlink("../../../header/h", f"{func_path}/class/{cls}/header/h")
+            _mkdir(f"{func_path}/streaming/class/{cls}")
+            _symlink(f"{func_path}/streaming/header/h", f"{func_path}/streaming/class/{cls}/h")
 
         _mkdir(f"{func_path}/control/header/h")
-        _symlink("header/h", f"{func_path}/control/header/h/class/fs")
-        _symlink("header/h", f"{func_path}/control/header/h/class/ss")
-
+        _symlink(f"{func_path}/control/header/h", f"{func_path}/control/class/fs/h")
+        _symlink(f"{func_path}/control/header/h", f"{func_path}/control/class/ss/h")
+                
         # Include an Extension Unit if the kernel supports that
         if os.path.isdir(f"{func_path}/control/extensions"):
             _mkdir(f"{func_path}/control/extensions/xu.0")
@@ -247,8 +248,8 @@ class _GadgetConfig:
             _write(f"{func_path}/control/extensions/xu.0/baSourceID", 2)
 
             # Set this XU as the source for the default output terminal
-            shutil.copyfile(f"{func_path}/terminal/output/default/bUnitID",
-                            f"{func_path}/control/extensions/xu.0/bSourceID")
+            shutil.copyfile(f"{func_path}/control/extensions/xu.0/bUnitID",
+                            f"{func_path}/control/terminal/output/default/bSourceID")
 
             # Flag some arbitrary controls
             _write(f"{func_path}/control/extensions/xu.0/bmControls", 0x55)
@@ -265,7 +266,7 @@ class _GadgetConfig:
         # Create symbolic link to target config
         if start:
             _symlink(func_path, join(self.__profile_path, func))
-        name = ("UVC Camera" if self.__uvc_instance == 0 else f"Extra Drive #{self.__uvc_instance}")
+        name = ("UVC Camera" if self.__uvc_instance == 0 else f"USB Video Class #{self.__uvc_instance}")
         self.__create_meta(func, name)
 
         self.__uvc_instance += 1
